@@ -242,7 +242,7 @@
         function openRescueModal() { document.getElementById('rescueModal').style.display = 'flex'; }
         function closeRescueModal() { document.getElementById('rescueModal').style.display = 'none'; }
 
-        // Fungsi Kirim Data ke Bot Discord (Menggunakan Domain & Port Bot-Hosting lo)
+        // Fungsi Kirim Data Langsung ke Discord lewat Webhook (Anti-Gagal & Langsung Masuk)
         async function submitRescue() {
             const data = {
                 lokasi: document.getElementById('rescueLoc').value,
@@ -250,25 +250,47 @@
                 jumlah_orang: document.getElementById('rescuePeople').value
             };
 
+            // Validasi input kosong
             if(!data.lokasi || !data.keadaan) return alert("Mohon isi lokasi dan keadaan kejadian dulu, Rul!");
 
+            // ISI WEBHOOK LO DI SINI: Ganti teks di bawah dengan link webhook channel STRU lo
+            const webhookURL = "MASUKKAN_LINK_WEBHOOK_DISCORD_LO_DI_SINI";
+
+            // Format isi pesan keren pakai Embed biar mirip bot asli
+            const payload = {
+                content: "@here", // Auto tag biar tim lo dapet notif
+                embeds: [{
+                    title: "🚨 EMERGENCY CALL - SKYTECH RESCUE UNIT 🚨",
+                    color: 16724813, // Warna Merah Emergency
+                    fields: [
+                        { name: "📍 LOKASI KEJADIAN", value: `\`\`\`${data.lokasi}\`\`\``, inline: false },
+                        { name: "🏥 KEADAAN / KONDISI KORBAN", value: `\`\`\`${data.keadaan}\`\`\``, inline: false },
+                        { name: "👥 JUMLAH KORBAN", value: `\`\`\`${data.jumlah_orang} Orang\`\`\``, inline: true }
+                    ],
+                    footer: { text: "SkyTech Rescue Unit • Sistem Laporan Website" },
+                    timestamp: new Date().toISOString()
+                }]
+            };
+
             try {
-                // DI SINI GANTINYA: Pakai domain alokasi fi5 dan port 21546
-                const response = await fetch('http://fi5.bot-hosting.net:21546/emergency', {
+                const response = await fetch(webhookURL, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
                 
-                if(response.ok) {
+                if(response.ok || response.status === 24) {
                     alert("🚨 Laporan Darurat Berhasil Dikirim! Tim STRU segera bersiap.");
                     closeRescueModal();
+                    // Reset input biar bersih kembali
                     document.getElementById('rescueLoc').value = "";
                     document.getElementById('rescueCond').value = "";
                     document.getElementById('rescuePeople').value = "1";
+                } else {
+                    alert("Gagal mengirim laporan, cek kembali link Webhook lo, Rul!");
                 }
             } catch (err) {
-                alert("Gagal konek ke bot, Rul! Pastikan bot lo lagi online.");
+                alert("Terjadi kesalahan jaringan saat mengirim laporan!");
             }
         }
     </script>

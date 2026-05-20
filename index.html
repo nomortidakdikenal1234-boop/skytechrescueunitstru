@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyTech Rescue Unit | Official Website</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co.com/6Kqpnzc/LOGO-SB-Co.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --blue-stru: #002b80; /* Biru Tua Medis */
+            --blue-light: #0055ff;
+            --white: #ffffff;
+            --bg-light: #f4f7ff;
+            --red-emergency: #ff4d4d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--white);
+            color: #333;
+            overflow-x: hidden;
+            cursor: none; /* Kursor asli dimatikan */
+        }
+
+        /* --- CUSTOM CURSOR --- */
+        #custom-cursor {
+            width: 20px; height: 20px;
+            border: 2px solid var(--blue-stru);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            position: fixed; pointer-events: none;
+            z-index: 10001; 
+            transition: transform 0.4s ease-out;
+            transform: translate(-50%, -50%);
+        }
+        #custom-cursor.click-anim {
+            transform: translate(-50%, -50%) scale(2.5);
+            background: rgba(0, 43, 128, 0.2);
+            border-color: var(--blue-stru);
+            transition: transform 0.4s ease-out;
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--blue-stru);
+            background-image: linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.02)), 
+                              url('https://i.ibb.co.com/6Kqpnzc/LOGO-SB-Co.png');
+            background-size: 50%; /* Ukuran logo pas di tengah */
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        /* --- NAVBAR --- */
+        nav {
+            position: fixed; top: 0; width: 100%;
+            padding: 20px 50px; display: flex;
+            justify-content: space-between; align-items: center;
+            z-index: 1000; background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px); transition: 0.4s;
+        }
+        nav.scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 50px;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; color: var(--white); font-weight: 800; font-size: 22px; transition: 0.3s; }
+        nav.scrolled .nav-brand { color: var(--blue-stru); }
+        .nav-brand img { width: 35px; }
+        
+        .nav-links button {
+            background: transparent; border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--white); padding: 8px 15px; margin-left: 10px;
+            border-radius: 5px; font-weight: 600; cursor: none; transition: 0.3s;
+        }
+        nav.scrolled .nav-links button {
+            color: var(--blue-stru); border-color: rgba(0, 43, 128, 0.3);
+        }
+        .nav-links button:hover { background: var(--white); color: var(--blue-stru) !important; }
+        nav.scrolled .nav-links button:hover { background: var(--blue-stru); color: white !important; }
+
+        /* --- SECTION SYSTEM --- */
+        section { max-width: 1000px; margin: 100px auto; padding: 0 20px; }
+        h2 { font-family: 'Playfair Display', serif; color: var(--blue-stru); margin-bottom: 25px; font-size: 2.4rem; }
+        
+        /* --- ABOUT CARD --- */
+        .about-box {
+            background: var(--white); padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border-left: 10px solid var(--blue-stru);
+        }
+        .about-box p { font-size: 1.1rem; line-height: 1.8; color: #444; margin-bottom: 20px; }
+        .about-box ul { list-style: none; }
+        .about-box li { margin-bottom: 10px; font-size: 1rem; color: #555; }
+
+        /* --- GRID & CARDS --- */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 20px; }
+        .card {
+            background: white; padding: 35px; border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-bottom: 5px solid var(--blue-stru);
+            transition: 0.3s; cursor: none;
+        }
+        .card:hover { transform: translateY(-8px); background: #fbfdff; }
+
+        /* --- RECRUITMENT LIST (LURUS RAPI) --- */
+        .recruit-box ul { list-style: none; padding: 0; }
+        .recruit-box li { 
+            padding: 15px 0; border-bottom: 1px solid #eee; font-weight: 600; font-size: 1.05rem;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .status-open { color: #28a745; font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+        .status-close { color: var(--red-emergency); font-size: 13px; font-weight: 800; letter-spacing: 1px; }
+
+        /* --- EMERGENCY MODAL FORM --- */
+        #rescueModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; justify-content: center; align-items: center;
+            z-index: 10002; backdrop-filter: blur(8px);
+        }
+        .modal-form { background: white; padding: 35px; border-radius: 20px; width: 95%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .modal-form h3 { color: var(--blue-stru); margin-bottom: 15px; font-size: 1.4rem; }
+        .modal-form label { font-size: 0.9rem; font-weight: 600; color: #555; }
+        .modal-form input, .modal-form textarea {
+            width: 100%; padding: 12px; margin: 8px 0 18px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; font-family: inherit;
+        }
+        .modal-form input:focus, .modal-form textarea:focus { border-color: var(--blue-stru); }
+        .btn-send { width: 100%; padding: 14px; background: var(--red-emergency); color: white; border: none; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: none; transition: 0.3s; }
+        .btn-send:hover { background: #cc3b3b; }
+
+        footer { text-align: center; padding: 50px 20px; color: #777; background: #f8f9fc; border-top: 1px solid #eee; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div id="custom-cursor"></div>
+
+    <nav id="navbar">
+        <div class="nav-brand"><img src="https://i.ibb.co.com/6Kqpnzc/LOGO-SB-Co.png" alt="Logo"> STRU</div>
+        <div class="nav-links">
+            <button onclick="window.scrollTo({top:0, behavior:'smooth'})">HOME</button>
+            <button onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">ABOUT</button>
+            <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})">SERVICES</button>
+            <button onclick="document.getElementById('recruitment').scrollIntoView({behavior:'smooth'})">RECRUITMENT</button>
+        </div>
+    </nav>
+
+    <header class="hero"></header>
+
+    <section id="about">
+        <h2>About Unit</h2>
+        <div class="about-box">
+            <p style="font-style: italic; font-weight: 600; color: var(--blue-stru); margin-bottom: 10px;">“Ready to Serve, Ready to Save.”</p>
+            <p><strong>SkyTech Rescue Unit (STRU)</strong> adalah unit sukarelawan di bawah SkyTech Company yang bergerak di bidang bantuan medis darurat, penyelamatan, dan tanggap bencana.</p>
+            <p>Didirikan pada tahun 2025, STRU berpusat di Argyle Rd. Fort Carson, No. 5 dan berkomitmen untuk memberikan pertolongan cepat, tepat, dan humanis kepada masyarakat dalam keadaan darurat.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
+            <ul>
+                <li>🔴 <strong>Bidang Operasional:</strong> Medis, Rescue, dan Kemanusiaan</li>
+                <li>🔵 <strong>Warna Identitas:</strong> Putih & Biru Tua</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="services">
+        <h2>Emergency Services</h2>
+        <div class="grid">
+            <div class="card" onclick="openRescueModal()" style="border-color: var(--red-emergency);">
+                🚨 <strong style="color: var(--red-emergency); font-size: 1.2rem; display: block; margin-top: 5px;">EMERGENCY SERVICE</strong>
+                <p style="margin-top:10px; color: #666; font-size: 0.95rem;">Klik untuk mengirimkan sinyal bantuan medis darurat langsung ke Tim STRU.</p>
+            </div>
+            <div class="card">
+                📦 <strong>Medical Supplies</strong>
+                <p style="margin-top:10px; color: #666; font-size: 0.95rem;">Penyediaan dan distribusi alat pertolongan pertama di area operasional.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="recruitment" class="recruit-box">
+        <h2>Recruitment</h2>
+        <div class="card">
+            <ul>
+                <li>Rescue Team Member <span class="status-open">OPEN</span></li>
+                <li>Medical First Responder <span class="status-open">OPEN</span></li>
+                <li>Logistics Volunteer <span class="status-close">CLOSE</span></li>
+                <li>Unit Dispatcher <span class="status-close">CLOSE</span></li>
+            </ul>
+        </div>
+    </section>
+
+    <footer>© 2025 SkyTech Rescue Unit • Part of SkyTech Company</footer>
+
+    <div id="rescueModal">
+        <div class="modal-form">
+            <h3>🚑 Form Laporan STRU</h3>
+            
+            <label for="rescueLoc">Lokasi Kejadian</label>
+            <input type="text" id="rescueLoc" placeholder="Contoh: Depan Ammunation Fort Carson">
+            
+            <label for="rescueCond">Keadaan / Kondisi Korban</label>
+            <textarea id="rescueCond" rows="3" placeholder="Contoh: Kecelakaan motor, korban patah tulang dan pingsan"></textarea>
+            
+            <label for="rescuePeople">Jumlah Korban (Orang)</label>
+            <input type="number" id="rescuePeople" value="1" min="1">
+            
+            <button class="btn-send" onclick="submitRescue()">KIRIM PANGGILAN DARURAT</button>
+            <button onclick="closeRescueModal()" style="width:100%; margin-top:15px; background:none; border:none; color:#888; font-weight:600; cursor:none;">Batal / Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const cursor = document.getElementById('custom-cursor');
+        
+        // Custom Kursor Bergerak
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Efek Klik Kursor (Membesar Lambat)
+        document.addEventListener('mousedown', () => cursor.classList.add('click-anim'));
+        document.addEventListener('mouseup', () => cursor.classList.remove('click-anim'));
+
+        // Efek Perubahan Navbar saat di-Scroll
+        window.onscroll = () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+        };
+
+        // Buka & Tutup Modal Emergency
+        function openRescueModal() { document.getElementById('rescueModal').style.display = 'flex'; }
+        function closeRescueModal() { document.getElementById('rescueModal').style.display = 'none'; }
+
+        // Fungsi Kirim Data ke Bot Discord (Flask API)
+        async function submitRescue() {
+            const data = {
+                lokasi: document.getElementById('rescueLoc').value,
+                keadaan: document.getElementById('rescueCond').value,
+                jumlah_orang: document.getElementById('rescuePeople').value
+            };
+
+            // Validasi input kosong
+            if(!data.lokasi || !data.keadaan) return alert("Mohon isi lokasi dan keadaan kejadian dulu, Rul!");
+
+            try {
+                // Jalur tembak ke API Flask Bot Discord lo (Sesuaikan IP/Domain hostingnya)
+                const response = await fetch('http://localhost:8080/emergency', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                if(response.ok) {
+                    alert("🚨 Laporan Darurat Berhasil Dikirim! Tim STRU segera bersiap.");
+                    closeRescueModal();
+                    // Reset input
+                    document.getElementById('rescueLoc').value = "";
+                    document.getElementById('rescueCond').value = "";
+                    document.getElementById('rescuePeople').value = "1";
+                }
+            } catch (err) {
+                alert("Gagal konek ke bot, Rul! Pastikan bot lo lagi online & port 8080 kebuka.");
+            }
+        }
+    </script>
+</body>
+</html>

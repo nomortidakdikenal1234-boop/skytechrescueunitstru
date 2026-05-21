@@ -13,7 +13,7 @@
             --blue-stru: #002b80; /* Biru Tua Medis */
             --blue-light: #0055ff;
             --white: #ffffff;
-            --bg-light: #f4f7ff;
+            --bg-light: #f4f4ff;
             --red-emergency: #ff4d4d;
         }
 
@@ -128,7 +128,7 @@
             display: none; justify-content: center; align-items: center;
             z-index: 10002; backdrop-filter: blur(8px);
         }
-       .modal-form { background: white; padding: 35px; border-radius: 20px; width: 95%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); cursor: none; }
+        .modal-form { background: white; padding: 35px; border-radius: 20px; width: 95%; max-width: 420px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); cursor: none; }
         .modal-form h3 { color: var(--blue-stru); margin-bottom: 15px; font-size: 1.4rem; cursor: none; }
         .modal-form label { font-size: 0.9rem; font-weight: 600; color: #555; cursor: none; }
         .modal-form input, .modal-form textarea {
@@ -212,6 +212,9 @@
             
             <label for="rescuePeople">Jumlah Korban (Orang)</label>
             <input type="number" id="rescuePeople" value="1" min="1">
+
+            <label for="rescuePhone">Nomor HP / ID Pelapor</label>
+            <input type="text" id="rescuePhone" placeholder="Contoh: 201109 atau 0812xxx">
             
             <button class="btn-send" onclick="submitRescue()">KIRIM PANGGILAN DARURAT</button>
             <button onclick="closeRescueModal()" style="width:100%; margin-top:15px; background:none; border:none; color:#888; font-weight:600; cursor:none;">Batal / Cancel</button>
@@ -242,7 +245,7 @@
         function openRescueModal() { document.getElementById('rescueModal').style.display = 'flex'; }
         function closeRescueModal() { document.getElementById('rescueModal').style.display = 'none'; }
 
-        // Fungsi Kirim Darurat + Validasi Nomor/ID Pelapor + Tombol Respon Tautan
+        // MASALAH 2 DI SINI (SUDAH FIXED): Fungsi submitRescue dibersihkan sehingga tidak duplikat lagi
         async function submitRescue() {
             const lokasiInput = document.getElementById('rescueLoc').value;
             const keadaanInput = document.getElementById('rescueCond').value;
@@ -275,7 +278,6 @@
                     footer: { text: "SkyTech Rescue Unit • Sistem Laporan Website" },
                     timestamp: new Date().toISOString()
                 }],
-                // INI YANG KURANG: Menambahkan komponen tombol URL langsung di bawah Embed Webhook
                 components: [{
                     type: 1,
                     components: [{
@@ -298,195 +300,7 @@
                     const modalInner = document.querySelector('.modal-form');
                     modalInner.innerHTML = `
                         <h3>🚑 Memantau Respon STRU</h3>
-                        <p style="margin-top: 15px;">Laporan lo beneran udah masuk ke Discord tim STRU.</p>
-                        
-                        <div id="status-tracker" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; font-weight: bold; border-radius: 5px; color: #856404;">
-                            ⏳ STATUS: Menunggu Tim Medis...
-                        </div>
-
-                        <div style="margin: 15px 0; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; font-size: 0.85rem; font-weight: bold; border-radius: 5px; text-align: center;">
-                            ⚠️ NOTE: SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.
-                        </div>
-                        
-                        <p style="font-size: 0.8rem; color: #777; text-align: center;">Halaman ini bakal otomatis nge-update pas ada petugas STRU yang mencet tombol RESPON di Discord.</p>
-                        <button onclick="location.reload()" style="width:100%; margin-top:20px; padding:12px; background:#002b80; color:white; border:none; border-radius:8px; font-weight:bold; cursor:none;">Tutup / Selesai</button>
-                    `;
-
-                    // Polling cek status ke server bot tiap 3 detik
-                    setInterval(async () => {
-                        try {
-                            const cek = await fetch(`http://fi5.bot-hosting.net:21546/get_status/${encodeURIComponent(lokasiInput)}`);
-                            const hasil = await cek.json();
-                            const tracker = document.getElementById('status-tracker');
-                            
-                            if(hasil.status !== "Menunggu Tim Medis") {
-                                tracker.style.background = "#d4edda";
-                                tracker.style.borderColor = "#28a745";
-                                tracker.style.color = "#155724";
-                                tracker.innerHTML = `🚑 STATUS: ${hasil.status}!`;
-                            }
-                        } catch(e) {
-                            console.log("Gagal terkoneksi untuk cek status live");
-                        }
-                    }, 3000);
-
-                } else {
-                    alert("Gagal mengirim laporan, cek kembali link Webhook lo!");
-                }
-            } catch (err) {
-                alert("Terjadi kesalahan jaringan!");
-            }
-        }// Fungsi Kirim Darurat + Validasi Nomor/ID Pelapor + Tombol Respon Tautan
-        async function submitRescue() {
-            const lokasiInput = document.getElementById('rescueLoc').value;
-            const keadaanInput = document.getElementById('rescueCond').value;
-            const jumlahInput = document.getElementById('rescuePeople').value;
-            const nomorInput = document.getElementById('rescuePhone').value; 
-
-            // Validasi input kosong
-            if(!lokasiInput || !keadaanInput || !nomorInput) {
-                return alert("Mohon isi semua data (Lokasi, Keadaan, dan Nomor/ID Pelapor) dulu, Rul!");
-            }
-
-            const webhookURL = "https://discord.com/api/webhooks/1506689018027577384/e_PyR-OU0Gu7tXf2vrgVDR9zcvJrfyZaOkSXuvRy3LPvdQ0GpeimkZViytCjuvGY1zun";
-
-            // BIKIN LINK URL: Mengarah ke endpoint Flask bot lo di hostingan
-            const linkRespon = `http://fi5.bot-hosting.net:21546/click_respon?lokasi=${encodeURIComponent(lokasiInput)}`;
-
-            // Format isi embed Discord
-            const payload = {
-                content: "@here",
-                embeds: [{
-                    title: "🚨 EMERGENCY CALL - SKYTECH RESCUE UNIT 🚨",
-                    color: 16724813, 
-                    fields: [
-                        { name: "📍 LOKASI KEJADIAN", value: `\`\`\`${lokasiInput}\`\`\``, inline: false },
-                        { name: "🏥 KEADAAN / KONDISI KORBAN", value: `\`\`\`${keadaanInput}\`\`\``, inline: false },
-                        { name: "👥 JUMLAH KORBAN", value: `\`\`\`${jumlahInput} Orang\`\`\``, inline: true },
-                        { name: "📞 NOMOR / ID PELAPOR", value: `\`\`\`${nomorInput}\`\`\``, inline: true }, 
-                        { name: "⚠️ NOTE PENTING", value: "**SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.**", inline: false }
-                    ],
-                    footer: { text: "SkyTech Rescue Unit • Sistem Laporan Website" },
-                    timestamp: new Date().toISOString()
-                }],
-                // INI YANG KURANG: Menambahkan komponen tombol URL langsung di bawah Embed Webhook
-                components: [{
-                    type: 1,
-                    components: [{
-                        type: 2,
-                        style: 5, // Style 5 adalah Link Button (Tombol Tautan)
-                        label: "🚑 RESPON LAPORAN (MELUNCUR)",
-                        url: linkRespon
-                    }]
-                }]
-            };
-
-            try {
-                const response = await fetch(webhookURL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-                
-                if(response.ok || response.status === 204) {
-                    const modalInner = document.querySelector('.modal-form');
-                    modalInner.innerHTML = `
-                        <h3>🚑 Memantau Respon STRU</h3>
-                        <p style="margin-top: 15px;">Laporan lo beneran udah masuk ke Discord tim STRU.</p>
-                        
-                        <div id="status-tracker" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; font-weight: bold; border-radius: 5px; color: #856404;">
-                            ⏳ STATUS: Menunggu Tim Medis...
-                        </div>
-
-                        <div style="margin: 15px 0; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; font-size: 0.85rem; font-weight: bold; border-radius: 5px; text-align: center;">
-                            ⚠️ NOTE: SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.
-                        </div>
-                        
-                        <p style="font-size: 0.8rem; color: #777; text-align: center;">Halaman ini bakal otomatis nge-update pas ada petugas STRU yang mencet tombol RESPON di Discord.</p>
-                        <button onclick="location.reload()" style="width:100%; margin-top:20px; padding:12px; background:#002b80; color:white; border:none; border-radius:8px; font-weight:bold; cursor:none;">Tutup / Selesai</button>
-                    `;
-
-                    // Polling cek status ke server bot tiap 3 detik
-                    setInterval(async () => {
-                        try {
-                            const cek = await fetch(`http://fi5.bot-hosting.net:21546/get_status/${encodeURIComponent(lokasiInput)}`);
-                            const hasil = await cek.json();
-                            const tracker = document.getElementById('status-tracker');
-                            
-                            if(hasil.status !== "Menunggu Tim Medis") {
-                                tracker.style.background = "#d4edda";
-                                tracker.style.borderColor = "#28a745";
-                                tracker.style.color = "#155724";
-                                tracker.innerHTML = `🚑 STATUS: ${hasil.status}!`;
-                            }
-                        } catch(e) {
-                            console.log("Gagal terkoneksi untuk cek status live");
-                        }
-                    }, 3000);
-
-                } else {
-                    alert("Gagal mengirim laporan, cek kembali link Webhook lo!");
-                }
-            } catch (err) {
-                alert("Terjadi kesalahan jaringan!");
-            }
-        }// Fungsi Kirim Darurat + Validasi Nomor/ID Pelapor + Tombol Respon Tautan
-        async function submitRescue() {
-            const lokasiInput = document.getElementById('rescueLoc').value;
-            const keadaanInput = document.getElementById('rescueCond').value;
-            const jumlahInput = document.getElementById('rescuePeople').value;
-            const nomorInput = document.getElementById('rescuePhone').value; 
-
-            // Validasi input kosong
-            if(!lokasiInput || !keadaanInput || !nomorInput) {
-                return alert("Mohon isi semua data (Lokasi, Keadaan, dan Nomor/ID Pelapor) dulu, Rul!");
-            }
-
-            const webhookURL = "https://discord.com/api/webhooks/1506689018027577384/e_PyR-OU0Gu7tXf2vrgVDR9zcvJrfyZaOkSXuvRy3LPvdQ0GpeimkZViytCjuvGY1zun";
-
-            // BIKIN LINK URL: Mengarah ke endpoint Flask bot lo di hostingan
-            const linkRespon = `http://fi5.bot-hosting.net:21546/click_respon?lokasi=${encodeURIComponent(lokasiInput)}`;
-
-            // Format isi embed Discord
-            const payload = {
-                content: "@here",
-                embeds: [{
-                    title: "🚨 EMERGENCY CALL - SKYTECH RESCUE UNIT 🚨",
-                    color: 16724813, 
-                    fields: [
-                        { name: "📍 LOKASI KEJADIAN", value: `\`\`\`${lokasiInput}\`\`\``, inline: false },
-                        { name: "🏥 KEADAAN / KONDISI KORBAN", value: `\`\`\`${keadaanInput}\`\`\``, inline: false },
-                        { name: "👥 JUMLAH KORBAN", value: `\`\`\`${jumlahInput} Orang\`\`\``, inline: true },
-                        { name: "📞 NOMOR / ID PELAPOR", value: `\`\`\`${nomorInput}\`\`\``, inline: true }, 
-                        { name: "⚠️ NOTE PENTING", value: "**SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.**", inline: false }
-                    ],
-                    footer: { text: "SkyTech Rescue Unit • Sistem Laporan Website" },
-                    timestamp: new Date().toISOString()
-                }],
-                // INI YANG KURANG: Menambahkan komponen tombol URL langsung di bawah Embed Webhook
-                components: [{
-                    type: 1,
-                    components: [{
-                        type: 2,
-                        style: 5, // Style 5 adalah Link Button (Tombol Tautan)
-                        label: "🚑 RESPON LAPORAN (MELUNCUR)",
-                        url: linkRespon
-                    }]
-                }]
-            };
-
-            try {
-                const response = await fetch(webhookURL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-                
-                if(response.ok || response.status === 204) {
-                    const modalInner = document.querySelector('.modal-form');
-                    modalInner.innerHTML = `
-                        <h3>🚑 Memantau Respon STRU</h3>
-                        <p style="margin-top: 15px;">Laporan lo beneran udah masuk ke Discord tim STRU.</p>
+                        <p style="margin-top: 15px;">Laporan kamu sudah masuk ke Discord tim STRU.</p>
                         
                         <div id="status-tracker" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; font-weight: bold; border-radius: 5px; color: #856404;">
                             ⏳ STATUS: Menunggu Tim Medis...

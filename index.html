@@ -245,100 +245,84 @@
         function openRescueModal() { document.getElementById('rescueModal').style.display = 'flex'; }
         function closeRescueModal() { document.getElementById('rescueModal').style.display = 'none'; }
 
-        // MASALAH 2 DI SINI (SUDAH FIXED): Fungsi submitRescue dibersihkan sehingga tidak duplikat lagi
         async function submitRescue() {
-            const lokasiInput = document.getElementById('rescueLoc').value;
-            const keadaanInput = document.getElementById('rescueCond').value;
-            const jumlahInput = document.getElementById('rescuePeople').value;
-            const nomorInput = document.getElementById('rescuePhone').value; 
+    // 1. Ambil semua data dari 4 inputan form di website lo
+    const lokasiInput = document.getElementById('rescueLoc')?.value || document.querySelector('input[placeholder*="Contoh: Depan"]')?.value;
+    const keadaanInput = document.getElementById('rescueCond')?.value || document.querySelector('textarea')?.value;
+    const jumlahInput = document.getElementById('rescuePeople')?.value || document.querySelector('input[type="number"]')?.value;
+    const nomorInput = document.getElementById('rescuePhone')?.value || document.querySelector('input[placeholder*="Contoh: 201109"]')?.value;
 
-            // Validasi input kosong
-            if(!lokasiInput || !keadaanInput || !nomorInput) {
-                return alert("Mohon isi semua data (Lokasi, Keadaan, dan Nomor/ID Pelapor) dulu, Rul!");
-            }
+    // Validasi biar user gak ngirim form kosong
+    if (!lokasiInput || !keadaanInput || !nomorInput) {
+        return alert("Mohon lengkapi semua data form terlebih dahulu, Rul!");
+    }
 
-            const webhookURL = "https://discord.com/api/webhooks/1506689018027577384/e_PyR-OU0Gu7tXf2vrgVDR9zcvJrfyZaOkSXuvRy3LPvdQ0GpeimkZViytCjuvGY1zun";
+    // Alamat API Flask Bot lo (Port 21546)
+    const flaskURL = "http://fi5.bot-hosting.net:21546/kirim_laporan_web";
 
-            // BIKIN LINK URL: Mengarah ke endpoint Flask bot lo di hostingan
-            const linkRespon = `http://fi5.bot-hosting.net:21546/click_respon?lokasi=${encodeURIComponent(lokasiInput)}`;
+    // Masukkan 4 data lengkap ke dalam payload JSON
+    const payloadData = {
+        lokasi: lokasiInput,
+        keadaan: keadaanInput,
+        jumlah: jumlahInput,
+        nomor: nomorInput
+    };
 
-            // Format isi embed Discord
-            const payload = {
-                content: "@here",
-                embeds: [{
-                    title: "🚨 EMERGENCY CALL - SKYTECH RESCUE UNIT 🚨",
-                    color: 16724813, 
-                    fields: [
-                        { name: "📍 LOKASI KEJADIAN", value: `\`\`\`${lokasiInput}\`\`\``, inline: false },
-                        { name: "🏥 KEADAAN / KONDISI KORBAN", value: `\`\`\`${keadaanInput}\`\`\``, inline: false },
-                        { name: "👥 JUMLAH KORBAN", value: `\`\`\`${jumlahInput} Orang\`\`\``, inline: true },
-                        { name: "📞 NOMOR / ID PELAPOR", value: `\`\`\`${nomorInput}\`\`\``, inline: true }, 
-                        { name: "⚠️ NOTE PENTING", value: "**SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.**", inline: false }
-                    ],
-                    footer: { text: "SkyTech Rescue Unit • Sistem Laporan Website" },
-                    timestamp: new Date().toISOString()
-                }],
-                components: [{
-                    type: 1,
-                    components: [{
-                        type: 2,
-                        style: 5, // Style 5 adalah Link Button (Tombol Tautan)
-                        label: "🚑 RESPON LAPORAN (MELUNCUR)",
-                        url: linkRespon
-                    }]
-                }]
-            };
-
-            try {
-                const response = await fetch(webhookURL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
+    try {
+        const response = await fetch(flaskURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadData)
+        });
+        
+        if (response.ok) {
+            // Ubah form jadi status tracker standby monitor
+            const modalInner = document.querySelector('.modal-form');
+            modalInner.innerHTML = `
+                <h3>🚑 Memantau Respon STRU</h3>
+                <p style="margin-top: 15px;">Laporan kamu sudah masuk ke sistem koordinasi STRU.</p>
                 
-                if(response.ok || response.status === 204) {
-                    const modalInner = document.querySelector('.modal-form');
-                    modalInner.innerHTML = `
-                        <h3>🚑 Memantau Respon STRU</h3>
-                        <p style="margin-top: 15px;">Laporan kamu sudah masuk ke Discord tim STRU.</p>
+                <div id="status-tracker" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; font-weight: bold; border-radius: 5px; color: #856404;">
+                    ⏳ STATUS: Menunggu Tim Medis...
+                </div>
+
+                <div style="margin: 15px 0; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; font-size: 0.85rem; font-weight: bold; border-radius: 5px; text-align: center;">
+                    ⚠️ NOTE: SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.
+                </div>
+                
+                <p style="font-size: 0.8rem; color: #777; text-align: center;">Halaman ini bakal otomatis nge-update pas ada petugas STRU yang mencet tombol RESPON di Discord.</p>
+                <button onclick="location.reload()" style="width:100%; margin-top:20px; padding:12px; background:#002b80; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Tutup / Selesai</button>
+            `;
+
+            // Polling cek status ke Flask tiap 3 detik
+            const intervalCek = setInterval(async () => {
+                try {
+                    const cek = await fetch(`http://fi5.bot-hosting.net:21546/get_status/${encodeURIComponent(lokasiInput)}`);
+                    if (!cek.ok) return;
+                    
+                    const hasil = await cek.json();
+                    const tracker = document.getElementById('status-tracker');
+                    
+                    if (tracker && hasil.status !== "Menunggu Tim Medis") {
+                        tracker.style.background = "#d4edda";
+                        tracker.style.borderColor = "#28a745";
+                        tracker.style.color = "#155724";
+                        tracker.innerHTML = `🚑 STATUS: ${hasil.status}!`;
                         
-                        <div id="status-tracker" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; font-weight: bold; border-radius: 5px; color: #856404;">
-                            ⏳ STATUS: Menunggu Tim Medis...
-                        </div>
-
-                        <div style="margin: 15px 0; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; font-size: 0.85rem; font-weight: bold; border-radius: 5px; text-align: center;">
-                            ⚠️ NOTE: SETIAP PENIPUAN PELAPORAN, KAMI TIDAK AKAN MERESPONNYA KEMBALI.
-                        </div>
-                        
-                        <p style="font-size: 0.8rem; color: #777; text-align: center;">Halaman ini bakal otomatis nge-update pas ada petugas STRU yang mencet tombol RESPON di Discord.</p>
-                        <button onclick="location.reload()" style="width:100%; margin-top:20px; padding:12px; background:#002b80; color:white; border:none; border-radius:8px; font-weight:bold; cursor:none;">Tutup / Selesai</button>
-                    `;
-
-                    // Polling cek status ke server bot tiap 3 detik
-                    setInterval(async () => {
-                        try {
-                            const cek = await fetch(`http://fi5.bot-hosting.net:21546/get_status/${encodeURIComponent(lokasiInput)}`);
-                            const hasil = await cek.json();
-                            const tracker = document.getElementById('status-tracker');
-                            
-                            if(hasil.status !== "Menunggu Tim Medis") {
-                                tracker.style.background = "#d4edda";
-                                tracker.style.borderColor = "#28a745";
-                                tracker.style.color = "#155724";
-                                tracker.innerHTML = `🚑 STATUS: ${hasil.status}!`;
-                            }
-                        } catch(e) {
-                            console.log("Gagal terkoneksi untuk cek status live");
-                        }
-                    }, 3000);
-
-                } else {
-                    alert("Gagal mengirim laporan, cek kembali link Webhook lo!");
+                        clearInterval(intervalCek); // Stop polling kalau udah direspon
+                    }
+                } catch (e) {
+                    console.log("Gagal terkoneksi untuk cek status live");
                 }
-            } catch (err) {
-                alert("Terjadi kesalahan jaringan!");
-            }
+            }, 3000);
+
+        } else {
+            alert("Gagal mengirim! Pastikan bot Python lo lagi running di hostingan.");
         }
+    } catch (err) {
+        alert("Terjadi kesalahan jaringan ke Flask Bot!");
+    }
+}
     </script>
 </body>
 </html>
